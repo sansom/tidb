@@ -14,11 +14,12 @@
 package variable
 
 import (
+	"strings"
+
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/context"
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util/types"
-	"strings"
 )
 
 const (

@@ -209,11 +209,11 @@
 		},
 		{
 			"ImportPath": "github.com/pingcap/tipb/go-binlog",
-			"Rev": "076169255d6d516f4a72d1648c085d872ff8bf48"
+			"Rev": "a84213a093ff1fda59b098cbcd4df8bb36c120bb"
 		},
 		{
 			"ImportPath": "github.com/pingcap/tipb/go-tipb",
-			"Rev": "89d447d2cc7b0019e697fb95e65981d3a641b7ec"
+			"Rev": "a84213a093ff1fda59b098cbcd4df8bb36c120bb"
 		},
 		{
 			"ImportPath": "github.com/rcrowley/go-metrics",

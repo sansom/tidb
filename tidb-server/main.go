@@ -16,9 +16,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -30,9 +33,12 @@ import (
 	"github.com/pingcap/tidb/perfschema"
 	"github.com/pingcap/tidb/plan"
 	"github.com/pingcap/tidb/server"
+	"github.com/pingcap/tidb/sessionctx/binloginfo"
 	"github.com/pingcap/tidb/store/localstore/boltdb"
 	"github.com/pingcap/tidb/store/tikv"
 	"github.com/pingcap/tidb/util/printer"
+	"github.com/pingcap/tipb/go-binlog"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -48,6 +54,7 @@ var (
 	reportStatus = flag.Bool("report-status", true, "If enable status report HTTP service.")
 	logFile      = flag.String("log-file", "", "log file path")
 	joinCon      = flag.Int("join-concurrency", 5, "the number of goroutines that participate joining.")
+	binlogSocket = flag.String("binlog-socket", "", "socket file to write binlog")
 )
 
 func main() {
@@ -89,13 +96,35 @@ func main() {
 	printer.PrintTiDBInfo()
 	log.SetLevelByString(cfg.LogLevel)
 
-	store, err := tidb.NewStore(fmt.Sprintf("%s://%s", *store, *storePath))
+	fullPath := fmt.Sprintf("%s://%s", *store, *storePath)
+	u, err := url.Parse(fullPath)
+	if err != nil {
+		log.Fatal(errors.ErrorStack(err))
+	}
+	if cluster := u.Query().Get("cluster"); cluster != "" {
+		id, err1 := strconv.ParseUint(cluster, 10, 64)
+		if err1 != nil {
+			log.Fatal(errors.ErrorStack(err1))
+		}
+		binloginfo.ClusterID = id
+	}
+	store, err := tidb.NewStore(fullPath)
 	if err != nil {
 		log.Fatal(errors.ErrorStack(err))
 	}
 
 	if *enablePS {
 		perfschema.EnablePerfSchema()
+	}
+	if *binlogSocket != "" {
+		dialerOpt := grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
+			return net.DialTimeout("unix", addr, timeout)
+		})
+		clientCon, err := grpc.Dial(*binlogSocket, dialerOpt, grpc.WithInsecure())
+		if err != nil {
+			log.Fatal(errors.ErrorStack(err))
+		}
+		binloginfo.PumpClient = binlog.NewPumpClient(clientCon)
 	}
 
 	// Create a session to load information schema.
