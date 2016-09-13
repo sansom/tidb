@@ -82,6 +82,7 @@ func (s *testSuite) TestBinlog(c *C) {
 	// Test table primary key is not integer.
 	tk.MustExec("create table local_binlog2 (name varchar(64) primary key)")
 	tk.MustExec("insert local_binlog2 values ('abc'), ('def')")
+	time.Sleep(time.Millisecond)
 	tk.MustExec("delete from local_binlog2 where name = 'def'")
 	time.Sleep(time.Millisecond)
 	prewriteVal = getLatestBinlogPrewriteValue(c, pump)
@@ -91,6 +92,7 @@ func (s *testSuite) TestBinlog(c *C) {
 	// Test Table don't have primary key.
 	tk.MustExec("create table local_binlog3 (c1 int, c2 int)")
 	tk.MustExec("insert local_binlog3 values (1, 2), (1, 3), (2, 3)")
+	time.Sleep(time.Millisecond)
 	tk.MustExec("delete from local_binlog3 where c2 = 3")
 	time.Sleep(time.Millisecond)
 	prewriteVal = getLatestBinlogPrewriteValue(c, pump)
